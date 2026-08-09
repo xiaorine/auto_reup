@@ -1,0 +1,16 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+.env.*
+*.mp3
+*.mp4
+*.wav
+*.xml
+*.txt
+!requirements.txt
+venv/
+.git
+.gitignore
+.dockerignore

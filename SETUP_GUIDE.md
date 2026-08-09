@@ -88,7 +88,7 @@ Bây giờ mọi thứ đã sẵn sàng. Bạn cần mở **2 cửa sổ Termina
 **Terminal 1 (Chạy Backend API Server):**
 ```cmd
 cd backend
-.venv\Scripts\uvicorn.exe app.main:app --host 127.0.0.1 --port 8000 --reload
+.venv\Scripts\uvicorn.exe main:app --host 127.0.0.1 --port 8000 --reload
 ```
 
 **Terminal 2 (Chạy Celery Worker - Chuyên Xử Lý Tác Vụ Nặng):**

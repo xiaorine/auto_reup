@@ -51,7 +51,7 @@ def init_db():
             
             inspector = inspect(engine)
             
-            # Check and add proxy_id and user_agent to social_accounts
+            # Check and add proxy_id, user_agent, followers_count, videos_count, total_views, total_likes, health_metrics to social_accounts
             try:
                 if 'social_accounts' in inspector.get_table_names():
                     social_accounts_cols = [col['name'] for col in inspector.get_columns('social_accounts')]
@@ -60,9 +60,34 @@ def init_db():
                             conn.execute(text("ALTER TABLE social_accounts ADD COLUMN proxy_id INTEGER REFERENCES proxies(id) ON DELETE SET NULL;"))
                         if 'user_agent' not in social_accounts_cols:
                             conn.execute(text("ALTER TABLE social_accounts ADD COLUMN user_agent VARCHAR(500);"))
+                        if 'followers_count' not in social_accounts_cols:
+                            conn.execute(text("ALTER TABLE social_accounts ADD COLUMN followers_count INTEGER DEFAULT 0;"))
+                        if 'videos_count' not in social_accounts_cols:
+                            conn.execute(text("ALTER TABLE social_accounts ADD COLUMN videos_count INTEGER DEFAULT 0;"))
+                        if 'total_views' not in social_accounts_cols:
+                            conn.execute(text("ALTER TABLE social_accounts ADD COLUMN total_views INTEGER DEFAULT 0;"))
+                        if 'total_likes' not in social_accounts_cols:
+                            conn.execute(text("ALTER TABLE social_accounts ADD COLUMN total_likes INTEGER DEFAULT 0;"))
+                        if 'health_metrics' not in social_accounts_cols:
+                            conn.execute(text("ALTER TABLE social_accounts ADD COLUMN health_metrics TEXT;"))
                         conn.commit()
             except Exception as e:
                 print(f"Error updating social_accounts schema: {e}")
+
+            # Check and add views_count, health_status, engine_type to upload_schedules
+            try:
+                if 'upload_schedules' in inspector.get_table_names():
+                    upload_schedules_cols = [col['name'] for col in inspector.get_columns('upload_schedules')]
+                    with engine.connect() as conn:
+                        if 'views_count' not in upload_schedules_cols:
+                            conn.execute(text("ALTER TABLE upload_schedules ADD COLUMN views_count INTEGER;"))
+                        if 'health_status' not in upload_schedules_cols:
+                            conn.execute(text("ALTER TABLE upload_schedules ADD COLUMN health_status VARCHAR(50) DEFAULT 'unknown';"))
+                        if 'engine_type' not in upload_schedules_cols:
+                            conn.execute(text("ALTER TABLE upload_schedules ADD COLUMN engine_type VARCHAR(50) DEFAULT 'playwright';"))
+                        conn.commit()
+            except Exception as e:
+                print(f"Error updating upload_schedules schema: {e}")
                 
             # Check and add target_account_name to live_stream_jobs
             try:

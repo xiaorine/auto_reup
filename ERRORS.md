@@ -86,3 +86,22 @@
 - **Status**: Fixed
 
 ---
+
+## [2026-08-09 21:16] - Lỗi UndefinedColumn: column social_accounts.followers_count does not exist khi truy vấn thông tin tài khoản (Runtime Error)
+
+- **Type**: Runtime Error
+- **Severity**: High
+- **File**: `backend/app/api/social_accounts.py:69`
+- **Agent**: fox
+- **Root Cause**: Cơ sở dữ liệu PostgreSQL thực tế thiếu các cột mới được định nghĩa trong model `SocialAccount` (`followers_count`, `videos_count`, `total_views`, `total_likes`, `health_metrics`), do hàm tự động nâng cấp schema (`init_db` trong `main.py`) chưa bao gồm các cột này.
+- **Error Message**:
+  ```text
+  sqlalchemy.exc.ProgrammingError: (psycopg2.errors.UndefinedColumn) column social_accounts.followers_count does not exist
+  ```
+- **Fix Applied**: 
+  1. Cập nhật hàm `init_db()` trong [main.py](file:///d:/Code/auto_reup/backend/main.py) để tự động kiểm tra và thêm các cột bị thiếu (`followers_count`, `videos_count`, `total_views`, `total_likes`, `health_metrics`) cho bảng `social_accounts` bằng lệnh `ALTER TABLE`.
+  2. Bổ sung kiểm tra và tự động thêm các cột mới (`views_count`, `health_status`, `engine_type`) cho bảng `upload_schedules` để tránh lỗi tương tự.
+  3. Chạy script để áp dụng các thay đổi này vào cơ sở dữ liệu PostgreSQL của hệ thống.
+- **Prevention**: Khi bổ sung các trường thông tin (cột) mới vào các model SQLAlchemy, cần cập nhật hàm khởi tạo / nâng cấp schema tự động (`init_db` trong `main.py`) hoặc xây dựng file migration tương ứng.
+- **Status**: Fixed
+
