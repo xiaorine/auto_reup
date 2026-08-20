@@ -2,6 +2,8 @@ import subprocess
 import time
 import re
 import os
+import tempfile
+import base64
 import xml.etree.ElementTree as ET
 import logging
 logger = logging.getLogger(__name__)
@@ -10,7 +12,7 @@ import urllib.request
 class ADBAutomator:
     def __init__(self, adb_ip: str):
         self.adb_ip = adb_ip
-        self.local_xml_path = f"/tmp/window_dump_{self.adb_ip.replace(':', '_')}.xml"
+        self.local_xml_path = os.path.join(tempfile.gettempdir(), f"window_dump_{self.adb_ip.replace(':', '_')}.xml")
 
     def _run_adb(self, args: list, timeout: int = 60) -> str:
         cmd = ["adb", "-s", self.adb_ip] + args
@@ -122,13 +124,13 @@ class ADBAutomator:
         logger.error(f"[ADBAutomator] Không tìm thấy phần tử {texts or content_descs} sau {retries} lần thử.")
         return False
 
-    def check_adb_keyboard(self):
+    def check_adb_keyboard(self) -> bool:
         """Kiểm tra và cài đặt ADBKeyboard nếu chưa có"""
         packages = self._run_adb(["shell", "pm", "list", "packages", "com.android.adbkeyboard"])
         if "com.android.adbkeyboard" not in packages:
             logger.info("[ADBAutomator] Chưa có ADBKeyboard. Bắt đầu tự động tải và cài đặt...")
             apk_url = "https://github.com/senzhk/ADBKeyBoard/raw/master/ADBKeyboard.apk"
-            apk_path = "/tmp/ADBKeyboard.apk"
+            apk_path = os.path.join(tempfile.gettempdir(), "ADBKeyboard.apk")
             if not os.path.exists(apk_path):
                 try:
                     urllib.request.urlretrieve(apk_url, apk_path)
@@ -148,6 +150,37 @@ class ADBAutomator:
             self._run_adb(["shell", "ime", "set", "com.android.adbkeyboard/.AdbIME"])
             time.sleep(1)
         return True
+
+    def clear_text(self):
+        """Xóa sạch nội dung trong ô nhập liệu đang focus"""
+        logger.info("[ADBAutomator] Xóa sạch ô nhập liệu hiện tại qua ADB_CLEAR_TEXT...")
+        self._run_adb(["shell", "am", "broadcast", "-a", "ADB_CLEAR_TEXT"])
+        time.sleep(0.5)
+
+    def input_text(self, text: str) -> bool:
+        """
+        Nhập văn bản vào ô đang focus, hỗ trợ đầy đủ 100% Unicode (tiếng Việt có dấu, tiếng Trung,
+        emoji, xuống dòng, ký tự đặc biệt, dấu nháy kép/đơn) qua ADBKeyBoard sử dụng Base64 (ADB_INPUT_B64).
+        """
+        if not text:
+            return True
+            
+        # Đảm bảo ADBKeyboard đã sẵn sàng
+        self.check_adb_keyboard()
+        
+        try:
+            # Mã hóa Base64 chuỗi UTF-8 để truyền an toàn qua ADB
+            b64_msg = base64.b64encode(text.encode('utf-8')).decode('ascii')
+            logger.info(f"[ADBAutomator] Nhập văn bản Unicode ({len(text)} ký tự) qua ADB_INPUT_B64...")
+            out = self._run_adb(["shell", "am", "broadcast", "-a", "ADB_INPUT_B64", "--es", "msg", b64_msg])
+            if "result=0" in out or "Broadcast completed" in out:
+                logger.info("[ADBAutomator] Gửi text Unicode qua ADB_INPUT_B64 thành công.")
+                return True
+            logger.info(f"[ADBAutomator] Broadcast ADB_INPUT_B64 output: {out}")
+            return True
+        except Exception as e:
+            logger.error(f"[ADBAutomator] Lỗi khi gửi text qua ADB_INPUT_B64: {e}")
+            return False
 
     def get_screen_size(self):
         """Lấy kích thước màn hình để bấm theo tọa độ phần trăm nếu cần"""

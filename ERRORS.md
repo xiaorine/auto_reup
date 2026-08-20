@@ -175,7 +175,20 @@
 
 ---
 
+## [2026-08-20 17:05] - Lỗi mã hóa Unicode (tiếng Việt, emoji, xuống dòng) khi truyền Caption qua ADB Uploader (Integration Error)
 
-
-
-
+- **Type**: Integration Error
+- **Severity**: High
+- **File**: `backend/app/services/uploader/adb_engine.py`, `backend/app/services/uploader/adb_automator.py`
+- **Agent**: fox
+- **Root Cause**: Gửi caption dạng văn bản thô trực tiếp qua lệnh dòng lệnh `adb shell am broadcast -a ADB_INPUT_TEXT --es msg '...'`. Bộ phân tích cú pháp Android shell CLI và `am` không xử lý chuẩn mã hóa UTF-8 đa byte (tiếng Việt có dấu, emoji, ký tự xuống dòng, dấu nháy kép/đơn), dẫn đến lỗi vỡ font ký tự (mojibake) hoặc ngắt gãy lệnh shell.
+- **Error Message**:
+  ```text
+  Lỗi vỡ font Unicode/Emoji hoặc command shell gãy khi truyền chuỗi ký tự tiếng Việt / emoji qua ADB_INPUT_TEXT.
+  ```
+- **Fix Applied**: 
+  1. Thêm phương thức `input_text` trong `ADBAutomator` sử dụng mã hóa Base64 (`base64.b64encode(text.encode('utf-8'))`) và gửi broadcast `ADB_INPUT_B64` tới `ADBKeyBoard`.
+  2. Thay thế toàn bộ các lời gọi `ADB_INPUT_TEXT` thô trong `_upload_douyin` và `_upload_tiktok_mobile` (`adb_engine.py`) sang `automator.input_text(post_caption)`.
+  3. Cập nhật đường dẫn file tạm APK trên Windows sang `tempfile.gettempdir()`.
+- **Prevention**: Luôn sử dụng giao thức truyền Base64 (`ADB_INPUT_B64`) khi tương tác nhập liệu văn bản với thiết bị Android qua ADBKeyBoard để bảo toàn 100% dữ liệu Unicode và tránh shell escaping issues.
+- **Status**: Fixed

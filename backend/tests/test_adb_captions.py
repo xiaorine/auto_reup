@@ -106,15 +106,14 @@ try:
         automator.click_percentage(0.85, 0.95)
         time.sleep(2)
 
-    # 7. Gõ caption
-    # Thêm khoảng trắng vào cuối hashtag để Tiktok tự nhận diện đó là hashtag mà không cần bấm chọn
-    text = "Test caption tự động từ Cáo #test "
+    # 7. Gõ caption (Hỗ trợ tiếng Việt đầy đủ, Emoji, ngắt dòng)
+    text = "🔥 Test caption tự động từ Cáo: Tiếng Việt chuẩn 100% & Emoji siêu đỉnh! #xuhuong #reup #fyp "
     if not automator.click_element(texts_contains=["Mô tả", "Thêm mô tả", "Add description", "Describe your post"], wait=2):
         automator.click_percentage(0.3, 0.2)
     time.sleep(1)
     
-    # Gửi text qua ADB Keyboard
-    uploader._run_adb_cmd(["shell", "am", "broadcast", "-a", "ADB_INPUT_TEXT", "--es", "msg", f"'{text}'"])
+    # Gửi text qua ADB Keyboard (Base64)
+    automator.input_text(text)
     time.sleep(3) # Chờ 3s để Tiktok xử lý chuỗi và render hashtag (nếu có)
     
     # Bấm phím Back 1 lần để đóng bảng gợi ý hashtag của Tiktok và thoát trạng thái Focus của ô nhập liệu

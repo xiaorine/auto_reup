@@ -241,7 +241,7 @@ class ADBUploader(BaseUploaderEngine):
         automator.click_element(texts=["下一步"], wait=3)
         
         # 7. Gõ caption
-        logger.info("[ADB] Nhập caption qua ADBKeyboard...")
+        logger.info("[ADB] Nhập caption Unicode qua ADBKeyboard (Base64)...")
         if not post_caption.endswith(" "):
             post_caption += " "
             
@@ -253,10 +253,8 @@ class ADBUploader(BaseUploaderEngine):
             automator.click_percentage(0.3, 0.2)
         self._smart_sleep(1.5)
         
-        # Escape dấu nháy đơn và gộp lệnh thành 1 chuỗi để buộc ADB dùng shell protocol
-        safe_caption = post_caption.replace("'", "'\\''")
-        shell_cmd = f"am broadcast -a ADB_INPUT_TEXT --es msg '{safe_caption}'"
-        self._run_adb_cmd(["shell", shell_cmd])
+        # Nhập text qua Base64 để hỗ trợ 100% Unicode (tiếng Trung, tiếng Việt, emoji, xuống dòng)
+        automator.input_text(post_caption)
         self._smart_sleep(3)
         
         # Bấm Nút Back (Trở về) của Android để đảm bảo mọi Popup, bảng gợi ý hashtag và Bàn phím đều bị thu gọn
@@ -555,7 +553,7 @@ class ADBUploader(BaseUploaderEngine):
             self._smart_sleep(2)
         
         # 7. Gõ caption
-        logger.info("[ADB] Nhập caption qua ADBKeyboard...")
+        logger.info("[ADB] Nhập caption Unicode qua ADBKeyboard (Base64)...")
         if not post_caption.endswith(" "):
             post_caption += " "
             
@@ -570,10 +568,8 @@ class ADBUploader(BaseUploaderEngine):
             automator.click_percentage(0.3, 0.2)
         self._smart_sleep(1.5)
         
-        # Escape dấu nháy đơn và gộp lệnh thành 1 chuỗi để buộc ADB dùng shell protocol
-        safe_caption = post_caption.replace("'", "'\\''")
-        shell_cmd = f"am broadcast -a ADB_INPUT_TEXT --es msg '{safe_caption}'"
-        self._run_adb_cmd(["shell", shell_cmd])
+        # Nhập text qua Base64 để hỗ trợ 100% Unicode (tiếng Việt có dấu, emoji, xuống dòng, ký tự đặc biệt)
+        automator.input_text(post_caption)
         self._smart_sleep(3)
         
         # Lời khuyên của user: Thay vì bấm mù vào 1 vị trí cố định, hãy tìm element "Đăng" hoặc "Chia sẻ với",

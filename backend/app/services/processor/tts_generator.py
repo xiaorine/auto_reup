@@ -371,7 +371,7 @@ class TTSGenerator:
                 return None
 
         import concurrent.futures
-        max_workers = 5
+        max_workers = 3
         results = []
         if log_callback: log_callback(f"[*] Bắt đầu sinh âm thanh Pipeline bằng {max_workers} luồng xử lý song song...\n")
         
