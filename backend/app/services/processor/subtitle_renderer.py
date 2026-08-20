@@ -317,8 +317,6 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 
         xy = [box_x1, box_y1, box_x2, box_y2]
         
-        shadow_offset = max(1, int(1 * self.scale_factor))
-
         if self.style == "neon":
             # Neon style: glow effect
             glow_img = Image.new('RGBA', (self.video_width, self.video_height), (0, 0, 0, 0))
@@ -338,18 +336,14 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
             
         elif self.style == "cloud":
             self.draw_cloud_background(draw, xy, self.bg_color)
-            # Add drop shadow to text
-            draw.text((text_x + shadow_offset * 2, text_y + shadow_offset * 2), text, font=self.font, fill=(0,0,0,150))
             draw.text((text_x, text_y), text, font=self.font, fill=self.text_color)
             
         elif self.style == "rounded":
             self.draw_rounded_rectangle(draw, xy, int(15 * self.scale_factor), self.bg_color)
-            draw.text((text_x + shadow_offset, text_y + shadow_offset), text, font=self.font, fill=(0,0,0,150))
             draw.text((text_x, text_y), text, font=self.font, fill=self.text_color)
             
-        else: # Classic
+        else: # Classic / Black_White / Default
             draw.rectangle(xy, fill=self.bg_color)
-            draw.text((text_x + shadow_offset, text_y + shadow_offset), text, font=self.font, fill=(0,0,0,150))
             draw.text((text_x, text_y), text, font=self.font, fill=self.text_color)
             
         img.save(output_path, format="PNG", optimize=True)

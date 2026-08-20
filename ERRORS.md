@@ -105,3 +105,77 @@
 - **Prevention**: Khi bổ sung các trường thông tin (cột) mới vào các model SQLAlchemy, cần cập nhật hàm khởi tạo / nâng cấp schema tự động (`init_db` trong `main.py`) hoặc xây dựng file migration tương ứng.
 - **Status**: Fixed
 
+---
+
+## [2026-08-20 09:30] - Lỗi Phụ đề bị hiển thị 2 lớp chữ đè lệch nhau (Double-layer / Ghosting Subtitle) (Logic Error)
+
+- **Type**: Logic Error
+- **Severity**: Medium
+- **File**: `backend/app/services/processor/subtitle_renderer.py:320-355`, `frontend/src/components/subtitle/InteractiveVideoPreview.jsx:240`
+- **Agent**: fox
+- **Root Cause**: 
+  1. Trong hàm `_create_subtitle_frame` của `SubtitleRenderer`, code cố ý tạo hiệu ứng đổ bóng thô sơ bằng cách gọi lệnh `draw.text((text_x + shadow_offset, text_y + shadow_offset), text, font=self.font, fill=(0,0,0,150))` trước khi gọi `draw.text((text_x, text_y), ...)`. Vì Pillow vẽ text vector nét cứng (không có Gaussian blur), khi chữ màu đen (`#000000`) trên nền trắng (`#FFFFFF`), hai lớp chữ đen bị đè lệch nhau 2-3px tạo cảm giác như bị in lỗi nét đôi / bóng ma / 2 lớp chữ chồng nhau.
+  2. Ở Frontend `InteractiveVideoPreview.jsx`, thuộc tính `textShadow: 0px 1px 2px rgba(0,0,0,0.5)` cũng tạo thêm một lớp bóng mờ phía sau text trong hộp nền.
+- **Fix Applied**: 
+  1. Xóa bỏ các lệnh `draw.text` với `shadow_offset` trong `_create_subtitle_frame` (các style hộp `classic`, `rounded`, `cloud`, `black_white`), chỉ vẽ 1 lần duy nhất chữ chính xác, sắc nét trên hộp nền tương phản cao.
+  2. Tắt `textShadow` ở `InteractiveVideoPreview.jsx` cho các kiểu phụ đề có hộp nền để hiển thị đồng nhất và sạch sẽ.
+- **Prevention**: Khi vẽ phụ đề đã có hộp nền (Box style: classic, rounded, cloud), không vẽ thêm text vector lệch offset cứng. Nếu cần shadow thì chỉ dùng khi không có nền hoặc phải có blur filter thích hợp.
+- **Status**: Fixed
+
+---
+
+## [2026-08-20 09:43] - Lỗi thiếu file fashionPrompts.js trên trang /faceless (Syntax / Module Not Found Error)
+
+- **Type**: Integration Error
+- **Severity**: High
+- **File**: `frontend/src/pages/AIFaceless/components/FashionStudio.jsx:3`
+- **Agent**: fox
+- **Root Cause**: Component `FashionStudio.jsx` import `FASHION_CONCEPTS` và `FASHION_MODELS` từ đường dẫn `../data/fashionPrompts`, nhưng thư mục `data/` và file `fashionPrompts.js` chưa được khởi tạo trong codebase, khiến Vite ném lỗi `[plugin:vite:import-analysis] Failed to resolve import "../data/fashionPrompts"`.
+- **Error Message**:
+  ```text
+  [plugin:vite:import-analysis] Failed to resolve import "../data/fashionPrompts" from "src/pages/AIFaceless/components/FashionStudio.jsx". Does the file exist?
+  ```
+- **Fix Applied**: Tạo file [fashionPrompts.js](file:///d:/Code/auto_reup/frontend/src/pages/AIFaceless/data/fashionPrompts.js) chứa đầy đủ danh sách `FASHION_CONCEPTS` (các concept chụp ảnh sản phẩm e-commerce chất lượng cao) và `FASHION_MODELS` (các động tác, góc quay chuyển động người mẫu Runway/Studio cho Veo3/Gemini Video).
+- **Prevention**: Kiểm tra việc export/import các file data khi tạo component mới và luôn chạy `npm run build` để kiểm tra tính toàn vẹn của bundle trước khi triển khai.
+- **Status**: Fixed
+
+---
+
+## [2026-08-20 09:55] - Lỗi resolve import wavesurfer.js/plugins/* trên trang /edit (Integration / Module Path Error)
+
+- **Type**: Integration Error
+- **Severity**: High
+- **File**: `frontend/src/components/subtitle/TimelineEditor.jsx:3-5`
+- **Agent**: fox
+- **Root Cause**: Trong Wavesurfer.js v7+, các plugin ESM nằm tại `wavesurfer.js/dist/plugins/*.esm.js`. Khi `TimelineEditor.jsx` import theo đường dẫn tắt `wavesurfer.js/plugins/regions`, Vite không resolve được file nếu không có extension `.esm.js` hoặc `.js` tương ứng.
+- **Error Message**:
+  ```text
+  [plugin:vite:import-analysis] Failed to resolve import "wavesurfer.js/plugins/regions" from "src/components/subtitle/TimelineEditor.jsx". Does the file exist?
+  ```
+- **Fix Applied**: Cập nhật các đường dẫn import plugin trong [TimelineEditor.jsx](file:///d:/Code/auto_reup/frontend/src/components/subtitle/TimelineEditor.jsx) sang `wavesurfer.js/dist/plugins/regions.esm.js`, `wavesurfer.js/dist/plugins/timeline.esm.js`, và `wavesurfer.js/dist/plugins/hover.esm.js`.
+- **Prevention**: Luôn sử dụng đường dẫn đầy đủ của các plugin trong Wavesurfer.js v7 khi dùng Vite bundler.
+- **Status**: Fixed
+
+---
+
+## [2026-08-20 10:04] - Lỗi thiếu wavesurfer.js trong Docker Container autoreup_frontend (Infrastructure / Docker Sync Error)
+
+- **Type**: Process & Test Failure (Infrastructure Fail)
+- **Severity**: High
+- **File**: `frontend/src/components/subtitle/TimelineEditor.jsx:2`
+- **Agent**: fox
+- **Root Cause**: Frontend được chạy trong Docker container (`autoreup_frontend`) với volume ẩn danh `/app/node_modules`. Khi `wavesurfer.js` được thêm vào `package.json`, lệnh `npm install` chỉ chạy trên máy chủ Windows cục bộ chứ chưa được chạy lại bên trong Docker container, khiến Vite bên trong container không tìm thấy gói `wavesurfer.js`.
+- **Error Message**:
+  ```text
+  [plugin:vite:import-analysis] Failed to resolve import "wavesurfer.js" from "src/components/subtitle/TimelineEditor.jsx". Does the file exist?
+  ```
+- **Fix Applied**: Thực hiện `docker exec autoreup_frontend npm install` để cài đặt `wavesurfer.js` vào volume `/app/node_modules` bên trong container, sau đó khởi động lại container `docker restart autoreup_frontend`. Vite đã tự động re-optimize dependencies thành công.
+- **Prevention**: Khi bổ sung package mới vào `package.json`, luôn đồng bộ `npm install` vào cả môi trường máy host và Docker container nếu đang chạy frontend qua Docker.
+- **Status**: Fixed
+
+---
+
+
+
+
+

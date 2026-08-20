@@ -237,7 +237,7 @@ export const InteractiveVideoPreview = ({ config, children, className = "w-full 
               overflow: 'hidden',
               textOverflow: 'clip',
               lineHeight: '1.15',
-              textShadow: isNeon ? 'none' : '0px 1px 2px rgba(0,0,0,0.5)',
+              textShadow: 'none',
               userSelect: 'none',
               borderRadius: br,
               boxShadow: isNeon ? `0 0 10px ${config.subtitleBgColor}, inset 0 0 10px ${config.subtitleBgColor}` : 'none',

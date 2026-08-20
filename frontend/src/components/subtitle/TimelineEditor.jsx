@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
 import WaveSurfer from 'wavesurfer.js';
-import RegionsPlugin from 'wavesurfer.js/plugins/regions';
-import TimelinePlugin from 'wavesurfer.js/plugins/timeline';
-import HoverPlugin from 'wavesurfer.js/plugins/hover';
+import RegionsPlugin from 'wavesurfer.js/dist/plugins/regions.esm.js';
+import TimelinePlugin from 'wavesurfer.js/dist/plugins/timeline.esm.js';
+import HoverPlugin from 'wavesurfer.js/dist/plugins/hover.esm.js';
 import { Play, Pause, ZoomIn, ZoomOut, Plus, Trash2 } from 'lucide-react';
 
 const API_BASE = 'http://localhost:8000/api';
